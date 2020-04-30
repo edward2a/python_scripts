@@ -1,6 +1,21 @@
 #!/usr/bin/env python3
 
+import argparse
 import boto3
+
+
+DEFAULT_REGION='eu-west-1' # I like Ireland.
+
+
+def load_args():
+    """Load and return configuration parameters."""
+
+    p = argparse.ArgumentParser()
+
+    p.add_argument('-r', '--region', default=DEFAULT_REGION,
+        help='AWS region')
+
+    return p.parse_args()
 
 
 def get_as_groups(client):
@@ -45,8 +60,10 @@ def get_ec2_non_asg_instances(client, as_instances):
 
 if __name__ == '__main__':
 
-    asg = boto3.client('autoscaling')
-    ec2 = boto3.client('ec2')
+    args = load_args()
+
+    asg = boto3.client('autoscaling', region_name=args.region)
+    ec2 = boto3.client('ec2', region_name=args.region)
 
     as_groups, as_instances = get_as_groups(asg)
     non_asg_i = get_ec2_non_asg_instances(ec2, as_instances)
