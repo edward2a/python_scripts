@@ -23,16 +23,16 @@ def get_as_groups(client):
 
 
 def get_ec2_non_asg_instances(client, as_instances):
-
+    """Get all EC2 instances by batch, return ones not in as_instances."""
     non_asg_i = []
 
     ec2_describe_p = client.get_paginator('describe_instances')
 
-    # fetch all instances?
-    #instances = [i['InstanceId']
-    #    for i_res in ec2_describe_p.paginate()
-    #    for i_s in i_res['Reservations']
-    #    for i in i_s['Instances']]
+    # fetch all instances? (left as reference for list comprehension)
+    # instances = [i['InstanceId']
+    #     for i_res in ec2_describe_p.paginate()
+    #     for i_s in i_res['Reservations']
+    #     for i in i_s['Instances']]
 
     for page in ec2_describe_p.paginate():
         for reservation in page['Reservations']:
@@ -44,7 +44,7 @@ def get_ec2_non_asg_instances(client, as_instances):
 
 
 if __name__ == '__main__':
-    
+
     asg = boto3.client('autoscaling')
     ec2 = boto3.client('ec2')
 
