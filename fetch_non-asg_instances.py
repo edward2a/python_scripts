@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Get list of ASG and NON-ASG instances in AWS.
+"""
 
 import argparse
 import boto3
@@ -13,7 +16,16 @@ def load_args():
     p = argparse.ArgumentParser()
 
     p.add_argument('-r', '--region', default=DEFAULT_REGION,
-        help='AWS region')
+        type=lambda s: s.split(','), help='AWS region')
+
+    p.add_argument('-c', '--config',
+        help='Configuration file to use')
+
+    p.add_argument('--no-print-autoscaling', action='store_false', default=True,
+        dest='print_asg', help='Do not print AutoScaling instances')
+
+    p.add_argument('--no-print-static', action='store_false', default=True,
+        dest='print_static', help='Do not print static instances')
 
     return p.parse_args()
 
@@ -58,20 +70,30 @@ def get_ec2_non_asg_instances(client, as_instances):
     return non_asg_i
 
 
-if __name__ == '__main__':
-
-    args = load_args()
-
-    asg = boto3.client('autoscaling', region_name=args.region)
-    ec2 = boto3.client('ec2', region_name=args.region)
+def process_region(region=DEFAULT_REGION, asg_i=True, sta_i=True):
+    """Main function, region scope."""
+    asg = boto3.client('autoscaling', region_name=region)
+    ec2 = boto3.client('ec2', region_name=region)
 
     as_groups, as_instances = get_as_groups(asg)
     non_asg_i = get_ec2_non_asg_instances(ec2, as_instances)
 
-    print('\n\t==== AutoScaling Instances ====\n')
-    for i in as_instances:
-        print(i)
+    if asg_i:
+        print('\n\t==== AutoScaling Instances - %s ====\n' % region)
+        for i in as_instances:
+            print(i)
 
-    print('\n\t==== Static Instances ====\n')
-    for i in non_asg_i:
-        print(i)
+    if sta_i:
+        print('\n\t==== Static Instances  - %s ====\n' % region)
+        for i in non_asg_i:
+            print(i)
+
+
+if __name__ == '__main__':
+
+    args = load_args()
+
+    if args.config is None:
+        for r in args.region:
+            process_region(region=r, asg_i=args.print_asg,
+                sta_i=args.print_static)
