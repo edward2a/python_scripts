@@ -1,30 +1,34 @@
 #!/usr/bin/env python3
 """
 Get list of ASG and NON-ASG instances in AWS.
+
+TODO: config file
 """
 
 import argparse
 import boto3
 
 
-DEFAULT_REGION='eu-west-1' # I like Ireland.
+DEFAULT_REGION = 'eu-west-1'  # I like Ireland.
 
 
 def load_args():
     """Load and return configuration parameters."""
-
     p = argparse.ArgumentParser()
 
-    p.add_argument('-r', '--region', default=DEFAULT_REGION,
+    p.add_argument(
+        '-r', '--region', default=DEFAULT_REGION,
         type=lambda s: s.split(','), help='AWS region')
 
-    p.add_argument('-c', '--config',
-        help='Configuration file to use')
+    p.add_argument(
+        '-c', '--config', help='Configuration file to use')
 
-    p.add_argument('--no-print-autoscaling', action='store_false', default=True,
+    p.add_argument(
+        '--no-print-autoscaling', action='store_false', default=True,
         dest='print_asg', help='Do not print AutoScaling instances')
 
-    p.add_argument('--no-print-static', action='store_false', default=True,
+    p.add_argument(
+        '--no-print-static', action='store_false', default=True,
         dest='print_static', help='Do not print static instances')
 
     return p.parse_args()
@@ -71,7 +75,7 @@ def get_ec2_non_asg_instances(client, as_instances):
 
 
 def process_region(region=DEFAULT_REGION, asg_i=True, sta_i=True):
-    """Main function, region scope."""
+    """Execute main function, region scope."""
     asg = boto3.client('autoscaling', region_name=region)
     ec2 = boto3.client('ec2', region_name=region)
 
@@ -95,5 +99,5 @@ if __name__ == '__main__':
 
     if args.config is None:
         for r in args.region:
-            process_region(region=r, asg_i=args.print_asg,
-                sta_i=args.print_static)
+            process_region(
+                region=r, asg_i=args.print_asg, sta_i=args.print_static)
