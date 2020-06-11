@@ -8,7 +8,7 @@
 # Input file format (yaml):
 #
 # my-instance-name-tag:
-#   image: ami-1234567812345678
+#   imageId: ami-1234567812345678
 #   instanceType: t2.micro
 #   keyName: my-ssh-key
 #   volumes:
@@ -59,7 +59,7 @@ def save_targets(dstfile, data):
 def validate_targets(targets):
     tainted = 0
     required = [
-        'image',
+        'imageId',
         'keyName',
         'volumes',
     ]
@@ -110,12 +110,12 @@ def process_volumes(targets, client, args, az_maps):
 
         for d, s in targets[t]['volumes'].items():
 
-            tags = [
-                {'Key': 'source-system', 'Value': t},
-                {'Key': 'device', 'Value': d},
-                {'Key': 'Name', 'Value': args.tag_prefix + '-volume'}
-            ]
-            tags.extend([{'Key':k, 'Value':v} for k,v in targets[t].get('tags', {}).items()])
+            tags = targets[t].get('tags', {})
+            tags.update({
+                'source-system': t,
+                'device': d,
+                'Name': args.tag_prefix + '-volume'})
+            tags = [{'Key':k, 'Value':v} for k,v in tags.items()]
 
             print('INFO: Processing volume {} ({})'.format(d, s))
             v = create_volume_from_snapshot(client, s, az,tags)
@@ -151,13 +151,14 @@ def volume_waiter(target, client):
 def create_instance(system, target, client, args):
     """Create vanilla instances."""
 
-    tags = [
-        {'Key':'Name', 'Value': '{}-{}-instance'.format(args.tag_prefix, system)},
-    ]
-    tags.extend([{'Key':k, 'Value':v} for k,v in target.get('tags', {}).items()])
+    tags = target.get('tags', {})
+    tags.update({
+        'Name': '{}-{}-instance'.format(args.tag_prefix, system)
+    })
+    tags = [{'Key':k, 'Value':v} for k,v in tags.items()]
 
     r = client.run_instances(
-        ImageId=target['image'],
+        ImageId=target['imageId'],
         InstanceType=target.get('instanceType', 't2.micro'),
         KeyName=target['keyName'],
         MaxCount=1,
